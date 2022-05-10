@@ -1,15 +1,15 @@
 package deque;
 
-public class ArrayDeque<ItemType> {
+public class ArrayDeque<T> {
 
-    private ItemType arr[];
+    private T arr[];
     private int size;
     private int nextFirst;
     private int nextLast;
     private int RFACTOR;
 
     public ArrayDeque() {
-        arr = (ItemType []) new Object[8];
+        arr = (T []) new Object[8];
         size = 0;
         nextFirst = 4;
         nextLast = 5;
@@ -18,7 +18,7 @@ public class ArrayDeque<ItemType> {
 
 
     private void resize(int capacity) {
-        ItemType newArr[] = (ItemType []) new Object[capacity];
+        T newArr[] = (T []) new Object[capacity];
         int count = 0;
         int index = (((nextFirst + 1) % arr.length) + arr.length) % arr.length;
         while (count < size) {
@@ -32,7 +32,7 @@ public class ArrayDeque<ItemType> {
     }
 
 
-    public void addFirst(ItemType item) {
+    public void addFirst(T item) {
         if (size == arr.length) {
             resize(size * RFACTOR);
         }
@@ -41,7 +41,7 @@ public class ArrayDeque<ItemType> {
         nextFirst = (((nextFirst - 1) % arr.length) + arr.length) % arr.length;
     }
 
-    public void addLast(ItemType item) {
+    public void addLast(T item) {
         if (size == arr.length) {
             resize(size * RFACTOR);
         }
@@ -73,30 +73,36 @@ public class ArrayDeque<ItemType> {
         System.out.println("");
     }
 
-    public ItemType removeFirst() {
+    public T removeFirst() {
+        if (size == 0) {
+            return null;
+        }
         if (size <= arr.length * 0.25 && arr.length >= 16) {
             resize(arr.length / RFACTOR);
             System.out.println(arr.length);
         }
         nextFirst = (nextFirst + 1) % arr.length;
-        ItemType nextFirstItem = arr[nextFirst];
+        T nextFirstItem = arr[nextFirst];
         arr[nextFirst] = null;
         size--;
         return nextFirstItem;
     }
 
-    public ItemType removeLast() {
+    public T removeLast() {
+        if (size == 0) {
+            return null;
+        }
         if (size <= arr.length * 0.25 && arr.length >= 16) {
             resize(arr.length / RFACTOR);
         }
         nextLast = (nextLast - 1) % arr.length;
-        ItemType lastItem = arr[nextLast];
+        T lastItem = arr[nextLast];
         arr[nextLast] = null;
         size--;
         return lastItem;
     }
 
-    public ItemType get(int index) {
+    public T get(int index) {
         int first = (nextFirst + 1) % arr.length;
         int itemIndex = (first + index) % arr.length;
         return arr[itemIndex];
