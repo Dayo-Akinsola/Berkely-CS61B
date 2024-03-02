@@ -1,13 +1,13 @@
 package deque;
 
-public class LinkedListDeque<ItemType> {
+public class LinkedListDeque<T> implements Deque<T> {
 
     private class Node {
-        private ItemType item;
+        private T item;
         private Node next;
         private Node prev;
 
-        public Node(ItemType i, Node p, Node n) {
+        public Node(T i, Node p, Node n) {
             item = i;
             next = n;
             prev = p;
@@ -24,7 +24,7 @@ public class LinkedListDeque<ItemType> {
         size = 0;
     }
 
-    public LinkedListDeque(ItemType x) {
+    public LinkedListDeque(T x) {
         sentinel =  new Node(null, null, null);
         sentinel.prev = sentinel;
         sentinel.next = sentinel;
@@ -32,7 +32,8 @@ public class LinkedListDeque<ItemType> {
         size = 1;
     }
 
-    public void addFirst(ItemType x) {
+    @Override
+    public void addFirst(T x) {
         Node newNode = new Node(x, sentinel, sentinel.next);
         Node oldFirst = sentinel.next;
         oldFirst.prev = newNode;
@@ -43,7 +44,8 @@ public class LinkedListDeque<ItemType> {
         size++;
     }
 
-    public void addLast(ItemType x) {
+    @Override
+    public void addLast(T x) {
         Node newNode = new Node(x, sentinel.prev, sentinel);
         Node oldLast = sentinel.prev;
         oldLast.next = newNode;
@@ -51,12 +53,13 @@ public class LinkedListDeque<ItemType> {
         size++;
     }
 
-    public ItemType removeFirst() {
+    @Override
+    public T removeFirst() {
         if (size == 0) {
             return null;
         }
         Node nodeToRemove = sentinel.next;
-        ItemType nodeItem = nodeToRemove.item;
+        T nodeItem = nodeToRemove.item;
         sentinel.next.next.prev = sentinel;
         sentinel.next = sentinel.next.next;
         nodeToRemove.prev = null;
@@ -65,12 +68,13 @@ public class LinkedListDeque<ItemType> {
         return nodeItem;
     }
 
-    public ItemType removeLast() {
+    @Override
+    public T removeLast() {
         if (size == 0) {
             return null;
         }
         Node nodeToRemove = sentinel.prev;
-        ItemType nodeItem = nodeToRemove.item;
+        T nodeItem = nodeToRemove.item;
         sentinel.prev.prev.next = sentinel;
         sentinel.prev = sentinel.prev.prev;
         nodeToRemove.next = null;
@@ -79,17 +83,12 @@ public class LinkedListDeque<ItemType> {
         return nodeItem;
     }
 
+    @Override
     public int size() {
         return size;
     }
 
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        }
-        return false;
-    }
-
+    @Override
     public void printDeque() {
         Node currentNode = sentinel;
         for (int i = 0; i < size; i++) {
@@ -99,7 +98,8 @@ public class LinkedListDeque<ItemType> {
         System.out.println("");
     }
 
-    public ItemType get(int index) {
+    @Override
+    public T get(int index) {
         if (index >= size) {
             return null;
         }
@@ -110,15 +110,15 @@ public class LinkedListDeque<ItemType> {
         return currentNode.item;
     }
 
-    private ItemType getRecursive(int index, Node currentNode) {
+    private T getRecursive(int index, Node currentNode) {
         if (index < 0) {
             return currentNode.item;
         }
         return getRecursive(index - 1, currentNode.next);
     }
 
-    public ItemType getRecursive(int index) {
-        ItemType nodeItem = getRecursive(index, sentinel);
+    public T getRecursive(int index) {
+        T nodeItem = getRecursive(index, sentinel);
         return nodeItem;
     }
 }
