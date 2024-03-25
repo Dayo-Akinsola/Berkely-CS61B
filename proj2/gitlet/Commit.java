@@ -23,4 +23,5 @@ public class Commit {
     private String message;
 
     /* TODO: fill in the rest of this class. */
+
 }
