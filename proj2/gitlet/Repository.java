@@ -440,4 +440,13 @@ public class Repository {
         final File commitFile = join(COMMITS_DIR, commitFileName);
         return readObject(commitFile, Commit.class);
     }
+
+    public static boolean isInGitletDirectory() {
+        if (GITLET_DIR.exists()) {
+            return true;
+        }
+
+        printMessageAndExit("Not in an initialized Gitlet directory.");
+        return false;
+    }
 }
