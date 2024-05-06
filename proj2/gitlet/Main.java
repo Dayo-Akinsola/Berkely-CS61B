@@ -1,12 +1,6 @@
 package gitlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.time.LocalDateTime;
 import java.util.Objects;
-
-import static gitlet.Utils.join;
 
 /**
  * Driver class for Gitlet, a subset of the Git version-control system.
@@ -62,30 +56,30 @@ public class Main {
                         System.out.println("Incorrect operands.");
                         System.exit(0);
                     }
-                    final var message = args[1];
+                    final String message = args[1];
                     Repository.find(message);
                     break;
                 case "status":
                     Repository.status();
                 case "checkout":
                     if (args.length == 3 && Objects.equals(args[1], "--")) {
-                        final var fileName = args[2];
+                        final String fileName = args[2];
                         Repository.checkoutFile(fileName);
                     }
 
                     if (args.length == 4 && Objects.equals(args[2], "--")) {
-                        final var commitHash = args[1];
-                        final var fileName = args[3];
+                        final String commitHash = args[1];
+                        final String fileName = args[3];
                         Repository.checkoutCommitFile(commitHash, fileName);
                     }
 
                     if (args.length == 2) {
-                        final var branchName = args[1];
+                        final String branchName = args[1];
                         Repository.checkoutBranch(branchName);
                     }
                 case "branch":
                     if (args.length == 2) {
-                        final var branchName = args[1];
+                        final String branchName = args[1];
                         Repository.branch(branchName);
                     }
             }
