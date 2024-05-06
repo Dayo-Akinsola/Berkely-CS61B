@@ -80,6 +80,7 @@ public class Main {
                     printMessageAndExit("Incorrect operands.");
                 }
                 status();
+                break;
             case "checkout":
                 isInGitletDirectory();
                 if (args.length == 3 && Objects.equals(args[1], "--")) {
@@ -102,14 +103,17 @@ public class Main {
                 }
 
                 printMessageAndExit("Incorrect operands.");
+                break;
             case "branch":
                 isInGitletDirectory();
                 if (args.length == 2) {
                     final String branchName = args[1];
                     branch(branchName);
                 }
+                break;
             default:
                 printMessageAndExit("No command with that name exists.");
+                break;
         }
 
 
