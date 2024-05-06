@@ -1,5 +1,8 @@
 package gitlet;
 
+import static gitlet.Repository.init;
+import static gitlet.Utils.printMessageAndExit;
+
 /**
  * Driver class for Gitlet, a subset of the Git version-control system.
  *
@@ -19,10 +22,10 @@ public class Main {
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-//                if (args.length != 2) {
-//                    printMessageAndExit("Incorrect operands.");
-//                }
-//                init();
+                if (args.length != 2) {
+                    printMessageAndExit("Incorrect operands.");
+                }
+                init();
                 break;
 //            case "add":
 //                isInGitletDirectory();
