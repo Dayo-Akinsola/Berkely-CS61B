@@ -19,14 +19,14 @@ public class Main {
      * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
     public static void main(String[] args) {
-//        if (args.length == 0) {
-//            System.out.println("Please enter a command.");
-//            System.exit(0);
-//        }
+        if (args.length == 0) {
+            System.out.println("Please enter a command.");
+            System.exit(0);
+        }
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-                if (args.length != 2) {
+                if (args.length != 1) {
                     printMessageAndExit("Incorrect operands.");
                 }
                 try {
@@ -72,7 +72,7 @@ public class Main {
                 break;
             case "log":
                 isInGitletDirectory();
-                if (args.length != 2) {
+                if (args.length != 1) {
                     printMessageAndExit("Incorrect operands.");
                 }
                 try {
@@ -83,7 +83,7 @@ public class Main {
                 break;
             case "global-log":
                 isInGitletDirectory();
-                if (args.length != 2) {
+                if (args.length != 1) {
                     printMessageAndExit("Incorrect operands.");
                 }
                 try {
@@ -102,7 +102,7 @@ public class Main {
                 break;
             case "status":
                 isInGitletDirectory();
-                if (args.length != 2) {
+                if (args.length != 1) {
                     printMessageAndExit("Incorrect operands.");
                 }
                 status();
