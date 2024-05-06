@@ -1,11 +1,5 @@
 package gitlet;
 
-import java.util.Objects;
-
-import static gitlet.Repository.*;
-import static gitlet.Utils.printMessageAndExit;
-
-
 /**
  * Driver class for Gitlet, a subset of the Git version-control system.
  *
