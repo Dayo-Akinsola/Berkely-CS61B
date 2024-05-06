@@ -16,7 +16,7 @@ public class Main {
      * Usage: java gitlet.Main ARGS, where ARGS contains
      * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 //        if (args.length == 0) {
 //            System.out.println("Please enter a command.");
 //            System.exit(0);
@@ -27,7 +27,12 @@ public class Main {
                 if (args.length != 2) {
                     printMessageAndExit("Incorrect operands.");
                 }
-                init();
+                try {
+                    init();
+                } catch (IOException ex) {
+                    System.out.println(ex.getMessage());
+                    System.exit(0);
+                }
                 break;
 //            case "add":
 //                isInGitletDirectory();
