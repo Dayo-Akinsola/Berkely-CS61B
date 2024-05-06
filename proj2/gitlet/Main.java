@@ -68,9 +68,9 @@ public class Main {
                     }
 
                     if (args.length == 4 && Objects.equals(args[2], "--")) {
-                        final String commitHash = args[1];
+                        final String commitHashs = args[1];
                         final String fileName = args[3];
-                        Repository.checkoutCommitFile(commitHash, fileName);
+                        Repository.checkoutCommitFile(commitHashs, fileName);
                     }
 
                     if (args.length == 2) {
