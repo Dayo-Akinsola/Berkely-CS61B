@@ -441,12 +441,11 @@ public class Repository {
         return readObject(commitFile, Commit.class);
     }
 
-    public static boolean isInGitletDirectory() {
+    public static void isInGitletDirectory() {
         if (GITLET_DIR.exists()) {
-            return true;
+            return;
         }
 
         printMessageAndExit("Not in an initialized Gitlet directory.");
-        return false;
     }
 }
