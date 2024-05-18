@@ -142,8 +142,37 @@ public class Main {
                 isInGitletDirectory();
                 if (args.length == 2) {
                     final String branchName = args[1];
-                    branch(branchName);
+                    try {
+                        branch(branchName);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return;
                 }
+                printMessageAndExit("Incorrect operands");
+                break;
+            case "rm-branch":
+                isInGitletDirectory();
+                if (args.length != 2) {
+                    printMessageAndExit("Incorrect operands.");
+                }
+                final String branchName = args[1];
+                removeBranch(branchName);
+                break;
+            case "reset":
+                isInGitletDirectory();
+                if (args.length != 2) {
+                    printMessageAndExit("Incorrect operands.");
+                }
+                final String commitId = args[1];
+                reset(commitId);
+                break;
+            case "merge":
+                isInGitletDirectory();
+                if (args.length != 2) {
+                    printMessageAndExit("Incorrect operands.");
+                }
+                merge(args[1]);
                 break;
             default:
                 printMessageAndExit("No command with that name exists.");

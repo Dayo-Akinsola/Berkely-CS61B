@@ -12,7 +12,7 @@ import static gitlet.Utils.*;
 
 /**
  * Represents a gitlet repository.
- *  does at a high level.
+ * does at a high level.
  *
  * @author Dayo Akinsola
  */
@@ -165,7 +165,7 @@ public class Repository {
             stagedFile.delete();
         }
         saveCommit(newCommit);
-        addCommitToBranch("master", newCommit);
+        addCommitToBranch(readContentsAsString(HEAD), newCommit);
     }
 
     public static void log() throws ParseException {
@@ -226,7 +226,7 @@ public class Repository {
             writeFileToCwd(commitObject, fileName);
         } else if (commitHash.length() < 40) {
             final List<String> allCommitHashes = plainFilenamesIn(COMMITS_DIR);
-            for (String fileCommitHash: allCommitHashes) {
+            for (String fileCommitHash : allCommitHashes) {
                 if (fileCommitHash.startsWith(commitHash)) {
                     final File commitWithFullHash = join(COMMITS_DIR, fileCommitHash);
                     final Commit commitObject = readObject(commitWithFullHash, Commit.class);
@@ -247,6 +247,237 @@ public class Repository {
         }
 
         final List<String> cwdFiles = plainFilenamesIn(CWD);
+        checkForUntrackedFiles(cwdFiles);
+
+        final String branchCommitHash = readContentsAsString(branchFile);
+        writeCommitFilesToCwd(branchCommitHash, cwdFiles);
+        writeContents(HEAD, branchName);
+    }
+
+
+    public static void branch(final String branchName) throws IOException {
+        final File branchFile = join(BRANCHES, branchName);
+        if (branchFile.exists()) {
+            printMessageAndExit("A branch with that name already exists.");
+        }
+        branchFile.createNewFile();
+        writeContents(branchFile, sha1(serialize(getHeadCommit())));
+    }
+
+    public static void removeBranch(final String branchName) {
+        final File branchFile = join(BRANCHES, branchName);
+        if (!branchFile.exists()) {
+            printMessageAndExit("A branch with that name does not exists.");
+        }
+        if (branchName.equals(readContentsAsString(HEAD))) {
+            printMessageAndExit("Cannot remove the current branch.");
+        }
+
+        join(BRANCHES, branchName).delete();
+    }
+
+    public static void reset(final String commitId) {
+        final File commitFile = join(COMMITS_DIR, commitId);
+        if (!commitFile.exists()) {
+            printMessageAndExit("No commit with that id exists.");
+        }
+        final List<String> cwdFiles = plainFilenamesIn(CWD);
+        checkForUntrackedFiles(cwdFiles);
+
+        writeCommitFilesToCwd(commitId, cwdFiles);
+        final String currentBranch = readContentsAsString(HEAD);
+        writeContents(join(BRANCHES, currentBranch), commitId);
+    }
+
+    public static void merge(final String branchName) {
+        if (!join(BRANCHES, branchName).exists()) {
+            printMessageAndExit("A branch with that name does not exist.");
+        }
+        if (Objects.requireNonNull(STAGING_AREA.list()).length != 0) {
+            printMessageAndExit("You have uncommitted changes.");
+        }
+        if (readContentsAsString(HEAD).equals(branchName)) {
+            printMessageAndExit("Cannot merge a branch with itself.");
+        }
+        final List<String> cwdFiles = plainFilenamesIn(CWD);
+        checkForUntrackedFiles(cwdFiles);
+        final String currentBranchName = readContentsAsString(HEAD);
+        final Commit splitPointCommit = findSplitPointCommit(currentBranchName, branchName);
+        final Commit currentBranchHeadCommit = readObject(join(COMMITS_DIR, currentBranchName), Commit.class);
+        final Commit givenBranchHeadCommit = readObject(join(COMMITS_DIR, branchName), Commit.class);
+
+        if (sha1(serialize(splitPointCommit)).equals(sha1(serialize(givenBranchHeadCommit)))) {
+            printMessageAndExit("Given branch is an ancestor of the current branch.");
+        }
+        if (sha1(serialize(splitPointCommit)).equals(sha1(serialize(currentBranchHeadCommit)))) {
+            checkoutBranch(branchName);
+            printMessageAndExit("Current branch fast-forwarded.");
+        }
+
+        final boolean mergeHasConflict = mergeBranches(splitPointCommit, currentBranchHeadCommit, givenBranchHeadCommit);
+
+        try {
+            commit(String.format("Merged %s into %s.", branchName, currentBranchName));
+        } catch (Exception ex) {
+            System.exit(0);
+        }
+
+        if (mergeHasConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+    }
+
+    private static boolean mergeBranches(final Commit splitPointCommit,
+                                      final Commit currentBranchHeadCommit,
+                                      final Commit givenBranchHeadCommit) {
+        final Map<String, String> splitPointFileNameToBlobMap = splitPointCommit.getFileNameToBlobMap();
+        final Map<String, String> currentBranchFileNameToBlobMap = currentBranchHeadCommit.getFileNameToBlobMap();
+        final Map<String, String> givenBranchFileNameToBlobMap = givenBranchHeadCommit.getFileNameToBlobMap();
+        boolean mergeHasConflict = false;
+        for (Map.Entry<String, String> entry : givenBranchFileNameToBlobMap.entrySet()) {
+            final String fileName = entry.getKey();
+            final String fileBlob = entry.getValue();
+            if (!splitPointFileNameToBlobMap.containsKey(fileName) && !currentBranchFileNameToBlobMap.containsKey(fileName)) {
+                stageAndCheckoutFile(fileName, fileBlob);
+            }
+
+            else if (splitPointFileNameToBlobMap.containsKey(fileName) && currentBranchFileNameToBlobMap.containsKey(fileName)) {
+                final String splitPointBlob = splitPointFileNameToBlobMap.get(fileName);
+                final String currentBranchBlob = splitPointFileNameToBlobMap.get(fileName);
+                if (splitPointBlob.equals(currentBranchBlob) && !splitPointBlob.equals(fileBlob)) {
+                    replaceAndStageFile(fileName, fileBlob);
+                }
+            }
+
+            else if (currentBranchFileNameToBlobMap.containsKey(fileName) && !currentBranchFileNameToBlobMap.get(fileName).equals(fileBlob)) {
+                final String currentBranchFileBlob = currentBranchFileNameToBlobMap.get(fileName);
+                mergeHasConflict = true;
+               createAndStageConflictFile(currentBranchFileBlob, fileBlob, fileName);
+            }
+        }
+
+        for (Map.Entry<String, String> splitPointEntry : splitPointFileNameToBlobMap.entrySet()) {
+            final String fileName = splitPointEntry.getKey();
+            final String fileBlob = splitPointEntry.getValue();
+            if (currentBranchFileNameToBlobMap.containsKey(fileName)
+                    && currentBranchFileNameToBlobMap.get(fileName).equals(fileBlob)
+                    && !givenBranchFileNameToBlobMap.containsKey(fileName)) {
+
+                final File fileInCwd = join(CWD, fileName);
+                fileInCwd.delete();
+                final String fileContents = readContentsAsString(join(BLOBS_DIR, fileBlob));
+                writeFileToStagingArea(fileName, fileContents, REMOVAL);
+            } else if (currentBranchFileNameToBlobMap.containsKey(fileName)
+                    && !currentBranchFileNameToBlobMap.get(fileName).equals(fileBlob)
+                    && !givenBranchFileNameToBlobMap.containsKey(fileName)) {
+
+                final String currentBranchFileBlob = currentBranchFileNameToBlobMap.get(fileName);
+                mergeHasConflict = true;
+                createAndStageConflictFile(currentBranchFileBlob, "", fileName);
+            } else if (givenBranchFileNameToBlobMap.containsKey(fileName)
+                    && !givenBranchFileNameToBlobMap.get(fileName).equals(fileBlob)
+                    && !currentBranchFileNameToBlobMap.containsKey(fileName)) {
+
+                final String givenBranchFileBlob = givenBranchFileNameToBlobMap.get(fileName);
+                mergeHasConflict = true;
+                createAndStageConflictFile("", givenBranchFileBlob, fileName);
+            }
+        }
+        return mergeHasConflict;
+    }
+
+    private static void createAndStageConflictFile(final String currentBranchFileBlob, final String givenBranchFileBlob, final String fileName) {
+        final String currentBranchFileContents = !currentBranchFileBlob.isEmpty() ? readContentsAsString(join(BLOBS_DIR, currentBranchFileBlob)) : "";
+        final String givenBranchFileContents = !givenBranchFileBlob.isEmpty() ? readContentsAsString(join(BLOBS_DIR, givenBranchFileBlob)) : "";
+
+        final String conflictedFileContents = "<<<<<<< HEAD\n" +
+                currentBranchFileContents +
+                "=======\n" +
+                givenBranchFileContents +
+                ">>>>>>>";
+        writeFileToStagingArea(fileName, conflictedFileContents, ADDITION);
+        writeContents(join(CWD, fileName), conflictedFileContents);
+    }
+
+    private static void replaceAndStageFile(final String fileName, final String fileBlob) {
+        final File fileInCwd = join(CWD, fileName);
+        final String givenBranchFileContents = readContentsAsString(join(BLOBS_DIR, fileBlob));
+        writeContents(fileInCwd, givenBranchFileContents);
+        writeFileToStagingArea(fileName, givenBranchFileContents, ADDITION);
+    }
+
+    private static void stageAndCheckoutFile(final String fileName, final String fileBlob) {
+        try {
+            final File fileInCwd = join(CWD, fileName);
+            final String fileContents = readContentsAsString(join(BLOBS_DIR, fileBlob));
+            writeFileToStagingArea(fileName, fileContents, ADDITION);
+            writeContents(fileInCwd, fileContents);
+
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static void writeFileToStagingArea(final String fileName, final String fileContents, final StagedFile.StagingType stagingType) {
+        final File stagedFile = join(STAGING_AREA, fileName);
+        try {
+            stagedFile.createNewFile();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        final StagedFile stagedFileObject = new StagedFile(fileName, fileContents, stagingType);
+        writeObject(stagedFile, stagedFileObject);
+    }
+
+    private static Commit findSplitPointCommit(final String currentBranch, final String givenBranch) {
+        final Set<String> currentBranchCommitIds = getBranchCommitIds(currentBranch);
+        final String splitPointCommitId = findSplitPointCommitId(currentBranchCommitIds, readContentsAsString(join(BRANCHES, givenBranch)));
+        return readObject(join(COMMITS_DIR, splitPointCommitId), Commit.class);
+    }
+
+    private static String findSplitPointCommitId(final Set<String> commitIds, final String currentCommitId) {
+        if (!commitIds.add(currentCommitId)) {
+            return currentCommitId;
+        }
+        final String parentCommitId = readObject(join(COMMITS_DIR, currentCommitId), Commit.class).getParentCommitHash();
+        return findSplitPointCommitId(commitIds, parentCommitId);
+    }
+
+    private static Set<String> getBranchCommitIds(final String branch) {
+        final Set<String> branchCommitIds = new HashSet<>();
+        final String branchCommitId = readContentsAsString(join(BRANCHES, branch));
+        addBranchCommitIds(branchCommitId, branchCommitIds);
+        return branchCommitIds;
+    }
+
+    private static void addBranchCommitIds(final String currentCommitId, final Set<String> branchCommitIds) {
+        final Commit branchCommit = readObject(join(COMMITS_DIR, currentCommitId), Commit.class);
+        branchCommitIds.add(currentCommitId);
+        if (branchCommit.getParentCommitHash() != null) {
+            addBranchCommitIds(branchCommit.getParentCommitHash(), branchCommitIds);
+        }
+    }
+
+    private static void writeCommitFilesToCwd(final String commitId, final List<String> cwdFiles) {
+        final Commit branchCommit = readObject(join(COMMITS_DIR, commitId), Commit.class);
+
+        for (String cwdFile : cwdFiles) {
+            restrictedDelete(cwdFile);
+        }
+
+        for (Map.Entry<String, String> fileToBlob : branchCommit.getFileNameToBlobMap().entrySet()) {
+            final String fileName = fileToBlob.getKey();
+            final String fileBlob = fileToBlob.getValue();
+            final String fileContents = readContentsAsString(join(BLOBS_DIR, fileBlob));
+            writeContents(join(CWD, fileName), fileContents);
+        }
+
+        for (String stagingAreaFileName : Objects.requireNonNull(plainFilenamesIn(STAGING_AREA))) {
+            join(STAGING_AREA, stagingAreaFileName).delete();
+        }
+    }
+
+    private static void checkForUntrackedFiles(final List<String> cwdFiles) {
         final Commit headCommit = getHeadCommit();
         for (String cwdFile : cwdFiles) {
             final File fileInStagingArea = join(STAGING_AREA, cwdFile);
@@ -260,28 +491,6 @@ public class Repository {
                 }
             }
         }
-
-        for (String cwdFile: cwdFiles) {
-            restrictedDelete(cwdFile);
-        }
-        final String branchCommitHash = readContentsAsString(branchFile);
-        final Commit branchCommit = readObject(join(COMMITS_DIR, branchCommitHash), Commit.class);
-
-        for (Map.Entry<String, String> fileToBlob: branchCommit.getFileNameToBlobMap().entrySet()) {
-            final String fileName = fileToBlob.getKey();
-            final String fileBlob = fileToBlob.getValue();
-            final String fileContents = readContentsAsString(join(BLOBS_DIR, fileBlob));
-            writeContents(join(CWD, fileName), fileContents);
-        }
-
-        for (String stagingAreaFileName : Objects.requireNonNull(plainFilenamesIn(STAGING_AREA))) {
-            join(STAGING_AREA, stagingAreaFileName).delete();
-        }
-        writeContents(HEAD, branchName);
-    }
-
-    public static void branch(final String branchName) {
-
     }
 
     private static void writeFileToCwd(final Commit commit, final String fileName) throws IOException {
