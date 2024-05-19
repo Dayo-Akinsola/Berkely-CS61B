@@ -370,27 +370,28 @@ public class Repository {
                 .getFileNameToBlobMap();
         boolean mergeHasConflict = false;
         for (Map.Entry<String, String> entry : givenBranchFileNameToBlobMap.entrySet()) {
-            final String fileName = entry.getKey();
-            final String fileBlob = entry.getValue();
-            if (!splitPointFileNameToBlobMap.containsKey(fileName)
-                    && !currentBranchFileNameToBlobMap.containsKey(fileName)) {
-                stageAndCheckoutFile(fileName, fileBlob);
+            final String givenBranchFileName = entry.getKey();
+            final String givenBranchFileBlob = entry.getValue();
+            if (!splitPointFileNameToBlobMap.containsKey(givenBranchFileName)
+                    && !currentBranchFileNameToBlobMap.containsKey(givenBranchFileName)) {
+                stageAndCheckoutFile(givenBranchFileName, givenBranchFileBlob);
             }
 
-            else if (splitPointFileNameToBlobMap.containsKey(fileName)
-                    && currentBranchFileNameToBlobMap.containsKey(fileName)) {
-                final String splitPointBlob = splitPointFileNameToBlobMap.get(fileName);
-                final String currentBranchBlob = splitPointFileNameToBlobMap.get(fileName);
-                if (splitPointBlob.equals(currentBranchBlob) && !splitPointBlob.equals(fileBlob)) {
-                    replaceAndStageFile(fileName, fileBlob);
+            else if (splitPointFileNameToBlobMap.containsKey(givenBranchFileName)
+                    && currentBranchFileNameToBlobMap.containsKey(givenBranchFileName)) {
+                final String splitPointBlob = splitPointFileNameToBlobMap.get(givenBranchFileName);
+                final String currentBranchBlob = splitPointFileNameToBlobMap.get(givenBranchFileName);
+                if (splitPointBlob.equals(currentBranchBlob) && !splitPointBlob.equals(givenBranchFileBlob)) {
+                    replaceAndStageFile(givenBranchFileName, givenBranchFileBlob);
                 }
             }
 
-            else if (currentBranchFileNameToBlobMap.containsKey(fileName)
-                    && !currentBranchFileNameToBlobMap.get(fileName).equals(fileBlob)) {
-                final String currentBranchFileBlob = currentBranchFileNameToBlobMap.get(fileName);
+            else if (currentBranchFileNameToBlobMap.containsKey(givenBranchFileName)
+                    && !currentBranchFileNameToBlobMap.get(givenBranchFileName).equals(givenBranchFileBlob)
+                    && !splitPointFileNameToBlobMap.containsKey(givenBranchFileName)) {
+                final String currentBranchFileBlob = currentBranchFileNameToBlobMap.get(givenBranchFileName);
                 mergeHasConflict = true;
-               createAndStageConflictFile(currentBranchFileBlob, fileBlob, fileName);
+               createAndStageConflictFile(currentBranchFileBlob, givenBranchFileBlob, givenBranchFileName);
             }
         }
 
@@ -419,6 +420,16 @@ public class Repository {
                 final String givenBranchFileBlob = givenBranchFileNameToBlobMap.get(fileName);
                 mergeHasConflict = true;
                 createAndStageConflictFile("", givenBranchFileBlob, fileName);
+            } else if (currentBranchFileNameToBlobMap.containsKey(fileName)
+                    && !currentBranchFileNameToBlobMap.get(fileName).equals(fileBlob)
+                    && givenBranchFileNameToBlobMap.containsKey(fileName)
+                    && !givenBranchFileNameToBlobMap.get(fileName).equals(fileBlob)
+                    && !givenBranchFileNameToBlobMap.get(fileName).equals(currentBranchFileNameToBlobMap.get(fileName))) {
+                mergeHasConflict = true;
+                createAndStageConflictFile(
+                        currentBranchFileNameToBlobMap.get(fileName),
+                        givenBranchFileNameToBlobMap.get(fileName),
+                        fileName);
             }
         }
         return mergeHasConflict;
@@ -460,7 +471,9 @@ public class Repository {
 
     }
 
-    private static void writeFileToStagingArea(final String fileName, final String fileContents, final StagedFile.StagingType stagingType) {
+    private static void writeFileToStagingArea(final String fileName,
+                                               final String fileContents,
+                                               final StagedFile.StagingType stagingType) {
         final File stagedFile = join(STAGING_AREA, fileName);
         try {
             stagedFile.createNewFile();
