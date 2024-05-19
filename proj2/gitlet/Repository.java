@@ -433,9 +433,11 @@ public class Repository {
                 ? readContentsAsString(join(BLOBS_DIR, givenBranchFileBlob)) : "";
 
         final String conflictedFileContents = "<<<<<<< HEAD\n" +
-                currentBranchFileContents +
+                currentBranchFileContents + "\n"
+                +
                 "=======\n" +
-                givenBranchFileContents +
+                givenBranchFileContents + "\n"
+                +
                 ">>>>>>>";
         writeFileToStagingArea(fileName, conflictedFileContents, ADDITION);
         writeContents(join(CWD, fileName), conflictedFileContents);

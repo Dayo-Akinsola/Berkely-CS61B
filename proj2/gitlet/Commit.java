@@ -1,5 +1,6 @@
 package gitlet;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.TreeMap;
@@ -18,6 +19,9 @@ public class Commit implements Serializable {
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
      */
+
+    @Serial
+    private static final long serialVersionUID = -509036631412701305L;
 
     /** The message of this Commit. */
     private final String message;
