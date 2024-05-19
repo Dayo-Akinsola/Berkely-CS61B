@@ -1,16 +1,14 @@
 package gitlet;
 
-// TODO: any imports you need here
-
 import java.io.Serializable;
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Date;
 import java.util.TreeMap;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
+ *
  *  does at a high level.
  *
- *  @author TODO
+ *  @author Dayo Akinsola
  */
 public class Commit implements Serializable {
     /**
@@ -22,15 +20,13 @@ public class Commit implements Serializable {
      */
 
     /** The message of this Commit. */
-    private String message;
+    private final String message;
     /** The time the Commit was created */
-    private Date timestamp;
+    private final Date timestamp;
     /** File name to blob reference mapping */
-    private TreeMap<String, String> fileNameToBlobMap;
+    private final TreeMap<String, String> fileNameToBlobMap;
     /** The parent commit that this Commit references */
-    private String parentCommitHash;
-
-    /* TODO: fill in the rest of this class. */
+    private final String parentCommitHash;
 
     public Commit(final String message, final Date timestamp, final TreeMap<String, String> fileNameToBlobMap, final String parentCommitHash) {
         this.message = message;
@@ -53,10 +49,6 @@ public class Commit implements Serializable {
 
     public String getParentCommitHash() {
         return this.parentCommitHash;
-    }
-
-    public void setParentCommitHash(final String parentCommitHash) {
-        this.parentCommitHash = parentCommitHash;
     }
 
     public void putFileNameToBlobMap(final String fileName, final String fileBlob) {
