@@ -443,10 +443,10 @@ public class Repository {
         final String givenBranchFileContents = !givenBranchFileBlob.isEmpty()
                 ? readContentsAsString(join(BLOBS_DIR, givenBranchFileBlob)) : "";
 
-        final String conflictedFileContents = "<<<<<<< HEAD\n" +
+        final String conflictedFileContents = "<<<<<<< HEAD" +
                 currentBranchFileContents
                 +
-                "=======\n" +
+                "=======" +
                 givenBranchFileContents
                 +
                 ">>>>>>>";
